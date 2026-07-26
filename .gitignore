@@ -1,0 +1,11 @@
+node_modules/
+.pnp
+.env
+.env.local
+dist/
+build/
+.next/
+.DS_Store
+*.log
+coverage/
+.temp/

@@ -1,0 +1,13 @@
+{
+  "name": "phs-event-ops-backend",
+  "version": "1.0.0",
+  "description": "PHS Event Operations Hub - Backend",
+  "main": "arbiter-scraper.js",
+  "scripts": {
+    "sync": "node arbiter-scraper.js",
+    "sync-local": "SUPABASE_URL=http://localhost:54321 SUPABASE_SERVICE_KEY=dev node arbiter-scraper.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0"
+  }
+}
