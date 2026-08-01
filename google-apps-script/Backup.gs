@@ -1,31 +1,34 @@
 /**
  * PHS Security Hub — automated backups (#22).
  *
- * Nightly dated export of every sheet, yearly archives, retention policy,
- * and a verified restore path. Runs entirely inside Apps Script and Drive.
+ * LEAST PRIVILEGE: this deliberately does NOT copy the source file, because
+ * copying requires full `drive` access to your entire Drive. Instead it
+ * CREATES a new spreadsheet and writes the data into it. A file the script
+ * creates is covered by `drive.file`, which grants access only to files this
+ * app made — nothing else in your Drive is visible to it.
  *
  * Setup: add this file to the Security Hub Apps Script project, then run
- * setupBackups() once from the editor. That installs the nightly trigger
- * and creates the folder structure. Run verifyBackup() any time to confirm
- * backups are readable and complete.
+ * setupBackups() once. Run verifyBackup() any time to confirm backups are
+ * readable and complete.
  */
 
 var BACKUP_CONFIG = {
   rootFolderName: 'PHS Security Hub Backups',
-  dailyFolderName: 'Daily',
-  yearlyFolderName: 'Yearly',
 
   // Nightly run hour, 24h, school local time.
   hour: 2,
 
-  // Keep this many daily backups. Older ones are deleted (trashed).
+  // Keep this many daily backups. Older ones are trashed.
   keepDailyDays: 45,
 
   // On January 1 the previous year is archived permanently.
   archiveOnJan1: true,
 
   // Where failures are reported.
-  alertEmail: 'twood9083@gmail.com'
+  alertEmail: 'twood9083@gmail.com',
+
+  // Sheets excluded from backup (logs about the backup itself).
+  skipSheets: ['Backup Log']
 };
 
 // ---------------------------------------------------------------------------
@@ -46,11 +49,8 @@ function setupBackups() {
     .create();
 
   var root = backupRoot_();
-  childFolder_(root, BACKUP_CONFIG.dailyFolderName);
-  childFolder_(root, BACKUP_CONFIG.yearlyFolderName);
-
-  Logger.log('Backups configured. Nightly at ~%s:00. Folder: %s',
-             BACKUP_CONFIG.hour, root.getUrl());
+  Logger.log('Backups configured. Nightly at ~%s:00.', BACKUP_CONFIG.hour);
+  Logger.log('Folder: %s', root.getUrl());
   return { ok: true, folderUrl: root.getUrl() };
 }
 
@@ -72,30 +72,88 @@ function runNightlyBackup() {
   }
 }
 
+/**
+ * Builds a brand-new spreadsheet and writes every sheet's values into it.
+ * Values only — this is a data backup, not a formatting backup, which is
+ * what makes `drive.file` sufficient.
+ */
 function createBackup_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var source = SpreadsheetApp.getActiveSpreadsheet();
   var stamp = Utilities.formatDate(new Date(), timezone_(), 'yyyy-MM-dd');
   var name = 'Security Hub backup ' + stamp;
+  var folder = backupRoot_();
 
-  var dailyFolder = childFolder_(backupRoot_(), BACKUP_CONFIG.dailyFolderName);
+  // Replace a same-day backup so repeat runs do not pile up. Iterating a
+  // folder this script created is allowed under drive.file.
+  var existing = folder.getFiles();
+  while (existing.hasNext()) {
+    var candidate = existing.next();
+    if (candidate.getName() === name) candidate.setTrashed(true);
+  }
 
-  // Remove a same-day backup if the job runs twice, so the folder stays clean.
-  var existing = dailyFolder.getFilesByName(name);
-  while (existing.hasNext()) existing.next().setTrashed(true);
+  var backup = SpreadsheetApp.create(name);
+  var backupFile = DriveApp.getFileById(backup.getId());
 
-  var copy = DriveApp.getFileById(ss.getId()).makeCopy(name, dailyFolder);
+  // Move it into the backup folder. Using the advanced Drive service so the
+  // file leaves My Drive root without needing DriveApp.getRootFolder(),
+  // which drive.file does not allow.
+  try {
+    Drive.Files.update({}, backup.getId(), null, {
+      addParents: folder.getId(),
+      removeParents: 'root',
+      supportsAllDrives: true
+    });
+  } catch (err) {
+    // Fall back to a plain add; the file then also remains in My Drive root,
+    // which is untidy but harmless.
+    try { folder.addFile(backupFile); } catch (err2) {}
+  }
 
-  // Count what was captured so verification has something to check against.
-  var sheets = ss.getSheets();
+  var sheets = source.getSheets();
   var rowCount = 0;
-  sheets.forEach(function (sheet) { rowCount += Math.max(0, sheet.getLastRow() - 1); });
+  var copied = 0;
+  var first = true;
+
+  for (var i = 0; i < sheets.length; i++) {
+    var sheet = sheets[i];
+    var sheetName = sheet.getName();
+    if (BACKUP_CONFIG.skipSheets.indexOf(sheetName) !== -1) continue;
+
+    var lastRow = sheet.getLastRow();
+    var lastCol = sheet.getLastColumn();
+
+    var target;
+    if (first) {
+      target = backup.getSheets()[0];
+      target.setName(sheetName);
+      first = false;
+    } else {
+      target = backup.insertSheet(sheetName);
+    }
+
+    if (lastRow > 0 && lastCol > 0) {
+      var values = sheet.getRange(1, 1, lastRow, lastCol).getDisplayValues();
+      target.getRange(1, 1, lastRow, lastCol).setValues(values);
+      rowCount += Math.max(0, lastRow - 1);
+    }
+    copied++;
+  }
+
+  // Stamp the backup so its origin and moment are self-evident.
+  var meta = backup.insertSheet('_backup_info');
+  meta.getRange(1, 1, 4, 2).setValues([
+    ['Created', Utilities.formatDate(new Date(), timezone_(), 'yyyy-MM-dd HH:mm:ss')],
+    ['Source', source.getName()],
+    ['Sheets', copied],
+    ['Data rows', rowCount]
+  ]);
 
   return {
     ok: true,
     name: name,
-    fileId: copy.getId(),
-    url: copy.getUrl(),
-    sheetCount: sheets.length,
+    fileId: backup.getId(),
+    url: backup.getUrl(),
+    sheetCount: copied,
     rowCount: rowCount
   };
 }
@@ -108,12 +166,13 @@ function pruneOldBackups_() {
   var cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - BACKUP_CONFIG.keepDailyDays);
 
-  var dailyFolder = childFolder_(backupRoot_(), BACKUP_CONFIG.dailyFolderName);
-  var files = dailyFolder.getFiles();
+  var files = backupRoot_().getFiles();
   var removed = 0;
 
   while (files.hasNext()) {
     var file = files.next();
+    // Yearly archives are never pruned.
+    if (file.getName().indexOf('archive') !== -1) continue;
     if (file.getDateCreated() < cutoff) {
       file.setTrashed(true);
       removed++;
@@ -129,27 +188,30 @@ function maybeArchiveYear_() {
   if (now.getMonth() !== 0 || now.getDate() !== 1) return;
 
   var year = now.getFullYear() - 1;
-  var yearlyFolder = childFolder_(backupRoot_(), BACKUP_CONFIG.yearlyFolderName);
   var name = 'Security Hub archive ' + year;
+  var folder = backupRoot_();
 
-  if (yearlyFolder.getFilesByName(name).hasNext()) return;
+  // Iterate rather than query — drive.file does not permit name searches.
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+    if (files.next().getName() === name) return;
+  }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  DriveApp.getFileById(ss.getId()).makeCopy(name, yearlyFolder);
+  var made = createBackup_();
+  DriveApp.getFileById(made.fileId).setName(name);
   Logger.log('Archived %s', name);
 }
 
 // ---------------------------------------------------------------------------
-// Verification — the part that makes a backup trustworthy
+// Verification
 // ---------------------------------------------------------------------------
 
 /**
  * Opens the most recent backup, confirms it is readable, and compares its
- * sheet and row counts against the live spreadsheet. Run this any time.
+ * sheet and row counts against the live spreadsheet.
  */
 function verifyBackup() {
-  var dailyFolder = childFolder_(backupRoot_(), BACKUP_CONFIG.dailyFolderName);
-  var files = dailyFolder.getFiles();
+  var files = backupRoot_().getFiles();
   var newest = null;
 
   while (files.hasNext()) {
@@ -166,13 +228,12 @@ function verifyBackup() {
   var backup = SpreadsheetApp.openById(newest.getId());
   var live = SpreadsheetApp.getActiveSpreadsheet();
 
-  var liveSheets = live.getSheets();
   var report = [];
   var problems = [];
 
-  liveSheets.forEach(function (sheet) {
+  live.getSheets().forEach(function (sheet) {
     var name = sheet.getName();
-    if (name === 'Backup Log') return;
+    if (BACKUP_CONFIG.skipSheets.indexOf(name) !== -1) return;
 
     var mirror = backup.getSheetByName(name);
     if (!mirror) {
@@ -183,10 +244,11 @@ function verifyBackup() {
     var liveRows = Math.max(0, sheet.getLastRow() - 1);
     var backupRows = Math.max(0, mirror.getLastRow() - 1);
 
-    // The backup can trail the live sheet by rows added since it ran, but it
-    // must never contain fewer rows than existed at capture time.
+    // A backup may trail live by rows added since it ran, but must never
+    // contain more than existed at capture time.
     if (backupRows > liveRows) {
-      problems.push(name + ': backup has more rows than live (' + backupRows + ' vs ' + liveRows + ')');
+      problems.push(name + ': backup has more rows than live (' +
+                    backupRows + ' vs ' + liveRows + ')');
     }
 
     report.push(name + ': ' + backupRows + ' rows');
@@ -215,19 +277,21 @@ function verifyBackup() {
 }
 
 /**
- * Restore path. Deliberately NOT automated — restoring is a decision, not a
- * job. This returns the steps and the file to restore from.
+ * Restore path. Deliberately not automated — restoring is a decision.
  */
 function restoreInstructions() {
   var result = verifyBackup();
   var steps = [
-    '1. Open the backup file listed below in Google Sheets.',
-    '2. File > Make a copy, so the backup itself stays untouched.',
-    '3. In the copy, confirm the data you expect is present.',
-    '4. Either point the Apps Script project at the copy, or copy the',
-    '   affected sheet(s) back into the live spreadsheet.',
-    '5. Re-run setup() so any missing columns are rebuilt.',
-    '6. Publish a new Apps Script deployment version.'
+    '1. Open the backup spreadsheet linked below.',
+    '2. Check the _backup_info tab for when it was captured.',
+    '3. For a single sheet: select the data, copy, and paste into the live',
+    '   sheet after clearing the damaged rows.',
+    '4. For a full restore: File > Make a copy of the backup, then point the',
+    '   Apps Script project at the copy.',
+    '5. Run setup() so any missing columns are rebuilt.',
+    '6. Publish a new Apps Script deployment version.',
+    'NOTE: backups store values, not formulas or formatting. Re-running',
+    'setup() restores the expected structure.'
   ];
   Logger.log('Restore from: %s', result.backupUrl || 'NO BACKUP FOUND');
   steps.forEach(function (s) { Logger.log(s); });
@@ -238,14 +302,29 @@ function restoreInstructions() {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Returns the backup folder, creating it on first use.
+ *
+ * IMPORTANT: `drive.file` does not permit searching Drive, so
+ * DriveApp.getFoldersByName() is unavailable. The folder ID is stored in
+ * Script Properties on creation and fetched by ID afterwards, which IS
+ * permitted for files and folders this script created.
+ */
 function backupRoot_() {
-  var existing = DriveApp.getFoldersByName(BACKUP_CONFIG.rootFolderName);
-  return existing.hasNext() ? existing.next() : DriveApp.createFolder(BACKUP_CONFIG.rootFolderName);
-}
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('BACKUP_FOLDER_ID');
 
-function childFolder_(parent, name) {
-  var existing = parent.getFoldersByName(name);
-  return existing.hasNext() ? existing.next() : parent.createFolder(name);
+  if (id) {
+    try {
+      return DriveApp.getFolderById(id);
+    } catch (err) {
+      // Folder was deleted or is unreachable; fall through and make a new one.
+    }
+  }
+
+  var folder = DriveApp.createFolder(BACKUP_CONFIG.rootFolderName);
+  props.setProperty('BACKUP_FOLDER_ID', folder.getId());
+  return folder;
 }
 
 function timezone_() {
@@ -288,5 +367,6 @@ function notifyFailure_(message) {
 function backupNowAndVerify() {
   var created = createBackup_();
   Logger.log('Created: %s', created.name);
+  Logger.log('URL: %s', created.url);
   return verifyBackup();
 }

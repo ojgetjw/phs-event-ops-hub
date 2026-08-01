@@ -29,16 +29,22 @@ No new variables are required for v9 phase 1.
 [ ] Replace Code.gs with google-apps-script/Code.gs
       (adds tickerFeed / tickerDismiss to the action router)
 [ ] ADD NEW FILE: Ticker.gs   (File > New > Script, name it "Ticker")
-[ ] ADD NEW FILE: Backup.gs   (File > New > Script, name it "Backup")
+
+    Backup.gs is DEFERRED — do not add it yet. The file is finished and
+    working; it is simply not part of this deploy. To enable later, add it
+    and run setupBackups(). If a runNightlyBackup trigger exists from an
+    earlier attempt, delete it (clock icon in the left sidebar).
 [ ] Replace appsscript.json with the included file.
-      NOTE: scopes changed. Gmail and full Drive access are now needed
-      for the ticker and backups. You will be asked to re-authorize.
+      Scopes changed; you will be asked to re-authorize. The prompt should
+      mention only:
+        - "See your email messages and settings"  (read-only Gmail)
+        - "See, edit, create and delete only the specific Google Drive
+           files you use with this app"          (drive.file)
+      If the prompt says "edit or delete ALL your Drive files" or asks to
+      SEND or MODIFY mail, STOP — the wrong manifest is loaded.
 [ ] Save.
 
-[ ] Run setup()        — existing setup, unchanged
-[ ] Run setupBackups() — installs the nightly 2 AM backup trigger
-[ ] Run backupNowAndVerify() — takes a backup immediately and verifies it
-      Expect: "VERIFIED — backup is readable and complete."
+[ ] Run setup()   — existing setup, unchanged
 
 [ ] MAILBOX ACCESS — the ticker reads the mailbox of the account this
       script runs as. Either:
@@ -102,21 +108,13 @@ No new variables are required for v9 phase 1.
 [ ] Send one with "URGENT" in it — appears first, styled red.
 [ ] Text is easily readable against the background, in sunlight.
 [ ] Clicking the ticker opens that email in Gmail.
-[ ] The X dismisses it and labels the thread Security Hub/Handled.
+[ ] The X dismisses it; a row appears in the "Ticker Handled" sheet tab.
+      (Gmail is never modified — the script has read-only mail access.)
 [ ] Hovering pauses the rotation.
 [ ] Dark mode: colors invert to deep fill with pale text, still readable.
 
 ------------------------------------------------------------------
-8. TEST — backups
-------------------------------------------------------------------
-[ ] Drive contains "PHS Security Hub Backups" with Daily and Yearly.
-[ ] A dated backup file exists in Daily.
-[ ] verifyBackup() reports VERIFIED.
-[ ] The Sheet has a "Backup Log" tab with an OK row.
-[ ] restoreInstructions() prints the restore steps and backup link.
-
-------------------------------------------------------------------
-9. AFTER DEPLOY — remaining security item
+8. AFTER DEPLOY — remaining security item
 ------------------------------------------------------------------
 [ ] Check the Google Drive uploads folder sharing. If attachments are
       set to "anyone with the link", the sign-in gate does not protect

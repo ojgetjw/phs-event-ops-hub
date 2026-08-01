@@ -6,6 +6,11 @@
  * sent to any AI service. Everything below runs inside Apps Script and
  * Gmail, on the school's own account.
  *
+ * LEAST PRIVILEGE: this uses `gmail.readonly`. The script can read mail but
+ * cannot alter, label, send, or delete anything. Dismissals are recorded in
+ * the project's own Sheet rather than by labelling Gmail, precisely so that
+ * a write scope is never needed.
+ *
  * Add this file to the Security Hub Apps Script project alongside Code.gs.
  * Then wire two actions in Code.gs's doPost router:
  *
@@ -23,10 +28,11 @@
 
 var TICKER_CONFIG = {
   // Anything with this Gmail label always appears, regardless of keywords.
+  // Reading labels is a read operation, so this works under gmail.readonly.
   alwaysLabel: 'Security Hub',
 
-  // Applied to a message once it is dismissed in the hub.
-  handledLabel: 'Security Hub/Handled',
+  // Dismissed message IDs live in this sheet, not in Gmail.
+  handledSheet: 'Ticker Handled',
 
   // How far back to look, and the ceiling on returned items.
   lookbackDays: 3,
@@ -85,16 +91,19 @@ var TICKER_CONFIG = {
 
 function tickerFeed() {
   try {
-    var query = 'newer_than:' + TICKER_CONFIG.lookbackDays + 'd -label:' +
-                quoteLabel_(TICKER_CONFIG.handledLabel) + ' -in:trash -in:spam';
+    var query = 'newer_than:' + TICKER_CONFIG.lookbackDays + 'd -in:trash -in:spam';
     var threads = GmailApp.search(query, 0, 60);
+    var handled = handledIds_();
     var out = [];
 
     for (var t = 0; t < threads.length; t++) {
       var messages = threads[t].getMessages();
       var msg = messages[messages.length - 1];
-      var labels = threadLabelNames_(threads[t]);
 
+      // Dismissed items are filtered here rather than labelled in Gmail.
+      if (handled[msg.getId()]) continue;
+
+      var labels = threadLabelNames_(threads[t]);
       var subject = msg.getSubject() || '';
       var snippet = stripQuoted_(msg.getPlainBody() || '').slice(0, 400);
       var haystack = (subject + ' ' + snippet).toLowerCase();
@@ -135,21 +144,62 @@ function tickerFeed() {
   }
 }
 
+/**
+ * Records a dismissal in the project's own Sheet. Gmail is never modified.
+ */
 function tickerDismiss(messageId, handledBy) {
   try {
     if (!messageId) return { ok: false, error: 'Missing message id.' };
-    var msg = GmailApp.getMessageById(messageId);
-    if (!msg) return { ok: false, error: 'Message not found.' };
 
-    var label = GmailApp.getUserLabelByName(TICKER_CONFIG.handledLabel) ||
-                GmailApp.createLabel(TICKER_CONFIG.handledLabel);
-    msg.getThread().addLabel(label);
+    var subject = '';
+    try {
+      var msg = GmailApp.getMessageById(messageId);
+      if (msg) subject = msg.getSubject() || '';
+    } catch (err) {
+      // Reading the subject is a nicety; dismissal still records without it.
+    }
 
-    logTickerAction_(messageId, msg.getSubject(), handledBy);
+    var sheet = handledSheet_();
+    sheet.appendRow([new Date(), messageId, subject, handledBy || '']);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
+}
+
+function handledSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(TICKER_CONFIG.handledSheet);
+  if (!sheet) {
+    sheet = ss.insertSheet(TICKER_CONFIG.handledSheet);
+    sheet.appendRow(['Handled At', 'Message ID', 'Subject', 'Handled By']);
+  }
+  return sheet;
+}
+
+/** Map of dismissed message ids, pruned to the lookback window. */
+function handledIds_() {
+  var map = {};
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet()
+      .getSheetByName(TICKER_CONFIG.handledSheet);
+    if (!sheet || sheet.getLastRow() < 2) return map;
+
+    var cutoff = Date.now() - (TICKER_CONFIG.lookbackDays + 2) * 86400000;
+    var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 2).getValues();
+
+    for (var i = 0; i < values.length; i++) {
+      var when = values[i][0];
+      var id = String(values[i][1] || '');
+      if (!id) continue;
+      var stamp = when instanceof Date ? when.getTime() : 0;
+      if (stamp && stamp < cutoff) continue;
+      map[id] = true;
+    }
+  } catch (err) {
+    // If the sheet is unreadable, show everything rather than nothing.
+  }
+  return map;
 }
 
 // ---------------------------------------------------------------------------
@@ -248,30 +298,12 @@ function threadLabelNames_(thread) {
   return thread.getLabels().map(function (l) { return l.getName(); });
 }
 
-function quoteLabel_(name) {
-  return '"' + String(name).replace(/"/g, '') + '"';
-}
-
 function escapeRe_(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function titleCase_(value) {
   return String(value).charAt(0).toUpperCase() + String(value).slice(1).toLowerCase();
-}
-
-function logTickerAction_(messageId, subject, handledBy) {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Ticker Actions');
-    if (!sheet) {
-      sheet = ss.insertSheet('Ticker Actions');
-      sheet.appendRow(['Timestamp', 'Message ID', 'Subject', 'Handled By']);
-    }
-    sheet.appendRow([new Date(), messageId, subject || '', handledBy || '']);
-  } catch (err) {
-    // Logging is best-effort; never block a dismissal.
-  }
 }
 
 /** Run once from the editor to confirm matching works against real mail. */

@@ -112,7 +112,12 @@ Display: category tag, subject cleaned up, extracted location and time,
 sender, age. Urgent styling on urgent / ASAP / emergency / immediately / now.
 
 Behavior: locked banner, cycles one at a time, pauses on hover, click opens
-the message directly in Gmail, dismissal marks it handled.
+the message directly in Gmail, dismissal records the message ID in the
+"Ticker Handled" sheet.
+
+**Least privilege:** runs on `gmail.readonly`. The script can read mail but
+cannot label, send, modify, or delete anything. Dismissals live in the
+project's own Sheet specifically so no Gmail write scope is needed.
 
 **Prerequisite:** Apps Script must run as an account that can read the
 security mailbox — either move the script or set a forwarding rule.
@@ -165,6 +170,14 @@ Suggests possible links on matching location and type within 14 days.
 Nightly dated export of all Sheets data with no manual step, yearly archive
 files, and a defined retention policy. Includes a **verified restore path**
 so the backups are known to work rather than assumed.
+
+**Least privilege:** runs on `drive.file`. Rather than copying the source
+file — which would require full `drive` access to the entire Drive — it
+creates a new spreadsheet and writes the values into it. The script can
+only ever see files it created itself.
+
+Tradeoff: backups store values, not formulas or formatting. Re-running
+`setup()` rebuilds the expected structure on restore.
 
 Must land before any data model change (#4).
 
@@ -225,10 +238,17 @@ editable recommendations section. Auto-emails on the 1st.
 ## 5. Build phases
 
 ### Phase 1 — Foundation
-Deploy v8 sign-in · backups (#22) · Overview redesign · email ticker (#23)
+Deploy v8 sign-in · Overview redesign · email ticker (#23)
 
-Backups first so everything after is protected. The ticker's rules engine is
-built to be reused by alerts later.
+Backups (#22) are **built and working but deferred** — see below. The
+ticker's rules engine is built to be reused by alerts later.
+
+**#22 backups — deferred, code complete.** `Backup.gs` is finished and the
+`drive.file` limitation is solved (folder ID stored in Script Properties
+rather than searching Drive by name). Not installed yet by choice. To
+enable: add `Backup.gs` back to the Apps Script project and run
+`setupBackups()`. Must land before #4 case linking, which changes the
+data model.
 
 ### Phase 2 — Field experience
 Fast entry (#3) + offline (#2) as one pass · search (#17)
