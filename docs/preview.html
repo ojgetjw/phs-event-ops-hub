@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>v9 preview — layout check</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../public/styles/tokens.css" />
+<link rel="stylesheet" href="../public/styles/base.css" />
+<link rel="stylesheet" href="../public/styles/layout.css" />
+<link rel="stylesheet" href="../public/styles/components.css" />
+<link rel="stylesheet" href="../public/styles/v9.css" />
+<style>
+  body { margin:0; }
+  .preview-bar { position:fixed; right:12px; bottom:12px; z-index:99; display:flex; gap:6px; }
+  .preview-bar button { padding:8px 12px; border-radius:8px; border:1px solid #999; background:#fff; cursor:pointer; font:inherit; font-size:12px; }
+</style>
+</head>
+<body>
+
+<svg class="svg-sprite" aria-hidden="true" style="display:none">
+  <symbol id="icon-overview" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="icon-report" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6M8 9h2"/></symbol>
+  <symbol id="icon-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m11 12 8.5-8.5M15 8l2 2M17.5 5.5l2 2"/></symbol>
+  <symbol id="icon-passdown" viewBox="0 0 24 24"><path d="m7 7 4-4 4 4M11 3v12a4 4 0 0 0 4 4h4"/><path d="m17 17 2 2-2 2"/></symbol>
+  <symbol id="icon-bolo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v3M21 12h-3M12 21v-3M3 12h3"/></symbol>
+  <symbol id="icon-supervisor" viewBox="0 0 24 24"><path d="M12 3 4 6v5c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="icon-resource" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5z"/><path d="M4 6.5v13M8 7h8M8 11h8"/></symbol>
+  <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+  <symbol id="icon-theme" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></symbol>
+  <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
+  <symbol id="icon-activity" viewBox="0 0 24 24"><path d="M3 12h4l2-7 4 14 2-7h6"/></symbol>
+  <symbol id="icon-alert" viewBox="0 0 24 24"><path d="M12 3 2.8 19h18.4z"/><path d="M12 9v4M12 17h.01"/></symbol>
+</svg>
+
+<div class="app-layout">
+  <nav class="side-nav" aria-label="Primary">
+    <a class="nav-identity" href="#">
+      <img src="../public/assets/phs-mark.svg" alt="" class="brand-mark" />
+      <span><strong>Security Hub</strong><small>Ward Parkway · Wornall</small></span>
+    </a>
+    <div class="nav-clock">
+      <strong id="clk">8:20 PM</strong>
+      <small>Fri, Jul 31</small>
+      <div class="status-chip is-live">Connected</div>
+    </div>
+    <div class="nav-section-label">Operations</div>
+    <a href="#" class="nav-link" aria-current="page"><svg class="icon nav-icon"><use href="#icon-overview"></use></svg><span class="nav-text">Overview</span></a>
+    <a href="#" class="nav-link"><svg class="icon nav-icon"><use href="#icon-report"></use></svg><span class="nav-text">Reporting</span><span class="form-code">IR / DA</span></a>
+    <a href="#" class="nav-link"><svg class="icon nav-icon"><use href="#icon-key"></use></svg><span class="nav-text">Keys</span><span class="form-code">KC</span></a>
+    <a href="#" class="nav-link"><svg class="icon nav-icon"><use href="#icon-passdown"></use></svg><span class="nav-text">Pass-down</span><span class="form-code">PD</span></a>
+    <a href="#" class="nav-link"><svg class="icon nav-icon"><use href="#icon-bolo"></use></svg><span class="nav-text">B.O.L.O.s</span><span class="form-code">BL</span></a>
+    <div class="nav-section-label">Reference</div>
+    <a href="#" class="nav-link"><svg class="icon nav-icon"><use href="#icon-resource"></use></svg><span class="nav-text">Resources</span></a>
+    <div class="nav-controls">
+      <button class="icon-btn"><svg class="icon"><use href="#icon-lock"></use></svg></button>
+      <button class="icon-btn"><svg class="icon"><use href="#icon-refresh"></use></svg></button>
+      <button class="icon-btn" onclick="toggleTheme()"><svg class="icon"><use href="#icon-theme"></use></svg></button>
+    </div>
+    <div class="nav-signout"><small>security@pembrokehill.org</small><button type="button">Sign out</button></div>
+  </nav>
+
+  <div class="app-main">
+    <div class="ticker ticker-urgent" id="ticker">
+      <span class="ticker-tag">URGENT</span>
+      <a class="ticker-body" href="#">
+        <span class="ticker-title">Gate blocked — Boocock lot</span>
+        <span class="ticker-detail">Boocock · now · J. Reeves</span>
+      </a>
+      <span class="ticker-count">1 of 4</span>
+      <span class="ticker-controls">
+        <button type="button">&#8249;</button><button type="button">&#8250;</button><button type="button">&#10005;</button>
+      </span>
+    </div>
+
+    <main class="page">
+      <section class="promoted-row">
+        <a class="promoted-card promoted-danger" href="#"><strong>2</strong><span>B.O.L.O.s</span></a>
+        <a class="promoted-card promoted-warning" href="#"><strong>3</strong><span>keys out</span></a>
+        <a class="promoted-card promoted-warning" href="#"><strong>1</strong><span>flagged</span></a>
+      </section>
+
+      <section class="quick-actions-row">
+        <a class="quick-action" href="#"><svg class="icon"><use href="#icon-activity"></use></svg><span>Daily</span></a>
+        <a class="quick-action" href="#"><svg class="icon"><use href="#icon-alert"></use></svg><span>Incident</span></a>
+        <a class="quick-action" href="#"><svg class="icon"><use href="#icon-key"></use></svg><span>Keys</span></a>
+        <a class="quick-action" href="#"><svg class="icon"><use href="#icon-bolo"></use></svg><span>B.O.L.O.</span></a>
+      </section>
+
+      <section class="feed-section">
+        <div class="feed-filters">
+          <button class="chip is-active">All</button><button class="chip">Reports</button>
+          <button class="chip">Activity</button><button class="chip">Pass-down</button>
+          <button class="chip">B.O.L.O.</button><button class="chip">Keys</button>
+        </div>
+        <div class="feed">
+          <article class="feed-item feed-report is-alert">
+            <div class="feed-item-head"><strong>Suspicious Activity <span class="form-code">IR-0006</span></strong>
+              <span class="status-pill status-pending-approval">Pending Approval</span><span class="badge badge-routine">Routine</span></div>
+            <p>Wornall / Lower Campus · Early Childhood — While reviewing CCTV for no-coverage hours, an adult male was observed…</p>
+            <div class="feed-item-meta"><span>7/31/2026 2:15 AM</span><span>1 involved</span></div>
+          </article>
+          <article class="feed-item feed-passdown is-alert">
+            <div class="feed-item-head"><strong>Pass-down · Day</strong><span class="badge badge-flagged">Flagged</span></div>
+            <p>No one is to go into Boocock unless it is an absolute emergency.</p>
+            <div class="feed-item-meta"><span>7/31/2026 7:56 AM</span><span>Spencer</span></div>
+          </article>
+          <article class="feed-item feed-activity">
+            <div class="feed-item-head"><strong>Traffic / Driveline</strong></div>
+            <p>Early Childhood / Intermediate Driveline · Afternoon pickup drive line. Assisted in placing cones.</p>
+            <div class="feed-item-meta"><span>7/31/2026 2:15 PM</span><span>Murphy</span></div>
+          </article>
+          <article class="feed-item feed-key">
+            <div class="feed-item-head"><strong>Master Key — Ward Parkway</strong></div>
+            <p>R. Alvarez · Midwest Mechanical</p>
+            <div class="feed-item-meta"><span>Issued 1:00 PM</span><span>Fasl</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="resting-row">
+        <a class="resting-card" href="#">
+          <div class="resting-head"><span><svg class="icon"><use href="#icon-bolo"></use></svg> B.O.L.O.s</span><strong>0</strong></div>
+          <p>No active advisories</p>
+        </a>
+        <a class="resting-card" href="#">
+          <div class="resting-head"><span><svg class="icon"><use href="#icon-key"></use></svg> Keys out</span><strong>0</strong></div>
+          <p>Nothing checked out</p>
+        </a>
+      </section>
+
+      <p class="feed-updated muted">Last updated 8:21 PM</p>
+    </main>
+  </div>
+</div>
+
+<div class="preview-bar">
+  <button onclick="toggleTheme()">Toggle dark</button>
+  <button onclick="cycleTone()">Cycle ticker tone</button>
+</div>
+
+<script>
+function toggleTheme(){
+  const el=document.documentElement;
+  el.dataset.theme = el.dataset.theme==='dark' ? 'light' : 'dark';
+}
+const tones=['urgent','issue','gate','visitor','coverage','event','request','quiet'];
+const labels={urgent:'URGENT',issue:'ISSUE',gate:'GATE',visitor:'VISITOR',coverage:'COVERAGE',event:'EVENT',request:'REQUEST',quiet:''};
+let i=0;
+function cycleTone(){
+  i=(i+1)%tones.length;
+  const t=tones[i], el=document.getElementById('ticker');
+  el.className='ticker ticker-'+t;
+  if(t==='quiet'){ el.innerHTML='<span class="ticker-quiet-text">No open security requests</span>'; return; }
+  el.innerHTML='<span class="ticker-tag">'+labels[t]+'</span>'+
+    '<a class="ticker-body" href="#"><span class="ticker-title">Unlock Hicks Field gate</span>'+
+    '<span class="ticker-detail">Hicks · Tonight 6:30 pm · M. Alvarez</span></a>'+
+    '<span class="ticker-count">2 of 4</span>'+
+    '<span class="ticker-controls"><button>&#8249;</button><button>&#8250;</button><button>&#10005;</button></span>';
+}
+</script>
+</body>
+</html>

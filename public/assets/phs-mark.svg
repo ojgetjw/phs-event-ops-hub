@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 72" role="img" aria-label="Security Hub shield">
+  <path d="M7 7 L30 4 L53 7 L53 40 Q53 60 30 69 Q7 60 7 40 Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="miter"/>
+  <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square">
+    <line x1="21.5" y1="22" x2="36" y2="43"/>
+    <line x1="38.5" y1="22" x2="24" y2="43"/>
+    <circle cx="37.5" cy="47" r="4.6"/>
+    <circle cx="22.5" cy="47" r="4.6"/>
+    <path d="M21.5 22 L18 19.5"/>
+    <path d="M24.5 26.5 L21 24"/>
+    <path d="M38.5 22 L42 19.5"/>
+    <path d="M35.5 26.5 L39 24"/>
+  </g>
+</svg>

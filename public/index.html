@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#071521" />
+  <title>PHS Security Hub</title>
+  <meta name="description" content="Pembroke Hill School security operations hub." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/assets/phs-mark.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem("phsHub.theme");
+        const preferred = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = saved || preferred;
+      } catch {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/styles/tokens.css" />
+  <link rel="stylesheet" href="/styles/base.css" />
+  <link rel="stylesheet" href="/styles/layout.css" />
+  <link rel="stylesheet" href="/styles/components.css" />
+  <link rel="stylesheet" href="/styles/v9.css" />
+  <style>
+    /* Officer sign-in gate */
+    .signin-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: #071521;
+      background-image: radial-gradient(1200px 600px at 50% -10%, rgba(157, 31, 58, 0.35), transparent);
+    }
+    .signin-card {
+      width: min(420px, 100%);
+      background: #ffffff;
+      color: #14212e;
+      border-radius: 16px;
+      padding: 32px 28px;
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+    }
+    .signin-card .brand-mark { width: 56px; height: 56px; margin: 0 auto 12px; display: block; }
+    .signin-card h2 { margin: 0 0 4px; font-size: 1.35rem; }
+    .signin-card .signin-sub { margin: 0 0 20px; color: #52616f; font-size: 0.92rem; }
+    .signin-btn-slot { display: flex; justify-content: center; min-height: 44px; margin-bottom: 16px; }
+    .signin-status { font-size: 0.85rem; color: #52616f; min-height: 1.2em; margin: 0; }
+    .signin-status.is-error { color: #9d1f3a; font-weight: 600; }
+    html[data-signin-locked] { overflow: hidden; }
+    .nav-signout { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; font-size: 0.75rem; }
+    .nav-signout button {
+      background: none; border: none; padding: 0; cursor: pointer;
+      color: inherit; font: inherit; text-decoration: underline; opacity: 0.8; text-align: left;
+    }
+  </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div class="signin-overlay" id="signinOverlay" role="dialog" aria-modal="true" aria-label="Officer sign-in">
+    <div class="signin-card">
+      <img src="/assets/phs-mark.svg" alt="" class="brand-mark" />
+      <h2>PHS Security Hub</h2>
+      <p class="signin-sub">Authorized security personnel only. Sign in with your PHS security Google account.</p>
+      <div class="signin-btn-slot" id="googleSigninBtn"></div>
+      <p class="signin-status" id="signinStatus" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <svg class="svg-sprite" aria-hidden="true" focusable="false">
+    <symbol id="icon-overview" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="icon-report" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6M8 9h2"/></symbol>
+    <symbol id="icon-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m11 12 8.5-8.5M15 8l2 2M17.5 5.5l2 2"/></symbol>
+    <symbol id="icon-passdown" viewBox="0 0 24 24"><path d="m7 7 4-4 4 4M11 3v12a4 4 0 0 0 4 4h4"/><path d="m17 17 2 2-2 2"/></symbol>
+    <symbol id="icon-bolo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v3M21 12h-3M12 21v-3M3 12h3"/></symbol>
+    <symbol id="icon-supervisor" viewBox="0 0 24 24"><path d="M12 3 4 6v5c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="icon-resource" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5z"/><path d="M4 6.5v13M8 7h8M8 11h8"/></symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+    <symbol id="icon-theme" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></symbol>
+    <symbol id="icon-activity" viewBox="0 0 24 24"><path d="M3 12h4l2-7 4 14 2-7h6"/></symbol>
+    <symbol id="icon-alert" viewBox="0 0 24 24"><path d="M12 3 2.8 19h18.4z"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="icon-checklist" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 9 1.5 1.5L12 8M14 9h3m-9 6 1.5 1.5L12 14m2 1h3"/></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="icon-external" viewBox="0 0 24 24"><path d="M14 3h7v7M10 14 21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></symbol>
+  </svg>
+
+  <div class="app-layout">
+    <nav class="side-nav" aria-label="Primary">
+      <a class="nav-identity" href="#/overview" aria-label="Security Hub home">
+        <img src="/assets/phs-mark.svg" alt="" class="brand-mark" />
+        <span>
+          <strong>Security Hub</strong>
+          <small>Ward Parkway · Wornall</small>
+        </span>
+      </a>
+
+      <div class="nav-clock" aria-live="polite">
+        <strong id="clockLabel">--:--</strong>
+        <small id="todayLabel">Today</small>
+        <div class="status-chip is-checking" id="connectionChip">Checking</div>
+      </div>
+
+      <div class="nav-section-label">Operations</div>
+      <a href="#/overview" class="nav-link" data-route="overview"><svg class="icon nav-icon" aria-hidden="true"><use href="#icon-overview"></use></svg><span class="nav-text">Overview</span></a>
+      <a href="#/incidents" class="nav-link" data-route="incidents"><svg class="icon nav-icon" aria-hidden="true"><use href="#icon-report"></use></svg><span class="nav-text">Officer Reporting</span><span class="form-code">IR / DA</span></a>
+      <a href="#/keys" class="nav-link" data-route="keys"><svg class="icon nav-icon" aria-hidden="true"><use href="#icon-key"></use></svg><span class="nav-text">Keys &amp; Equipment</span><span class="form-code">KC</span></a>
+      <a href="#/passdown" class="nav-link" data-route="passdown"><svg class="icon nav-icon" aria-hidden="true"><use href="#icon-passdown"></use></svg><span class="nav-text">Pass-down</span><span class="form-code">PD</span></a>
+      <a href="#/bolos" class="nav-link" data-route="bolos"><svg class="icon nav-icon" aria-hidden="true"><use href="#icon-bolo"></use></svg><span class="nav-text">B.O.L.O.s</span><span class="form-code">BL</span></a>
+      <div class="nav-section-label">Reference</div>
+      <a href="#/supervisor" class="nav-link" data-route="supervisor" data-supervisor-only hidden><svg class="icon nav-icon" aria-hidden="true"><use href="#icon-supervisor"></use></svg><span class="nav-text">Supervisor Review</span></a>
+      <a href="#/resources" class="nav-link" data-route="resources"><svg class="icon nav-icon" aria-hidden="true"><use href="#icon-resource"></use></svg><span class="nav-text">Resources</span></a>
+      <div class="nav-controls">
+        <button id="supervisorAccessBtn" class="icon-btn" type="button" aria-label="Enter supervisor PIN" title="Supervisor access">
+          <svg class="icon" aria-hidden="true"><use href="#icon-lock"></use></svg>
+        </button>
+        <button id="refreshHubBtn" class="icon-btn" type="button" aria-label="Refresh hub data" title="Refresh">
+          <svg class="icon" aria-hidden="true"><use href="#icon-refresh"></use></svg>
+        </button>
+        <button id="themeToggleBtn" class="icon-btn" type="button" aria-label="Toggle dark mode" title="Appearance">
+          <svg class="icon" aria-hidden="true"><use href="#icon-theme"></use></svg>
+        </button>
+      </div>
+
+      <div class="nav-signout" id="signOutWrap" hidden>
+        <small id="signedInEmail"></small>
+        <button type="button" data-sign-out>Sign out</button>
+      </div>
+    </nav>
+
+    <div class="app-main">
+      <div class="ticker ticker-quiet" id="ticker" aria-live="polite" aria-label="Security requests"></div>
+      <main class="page" id="main" tabindex="-1">
+        <!-- Pages render here -->
+      </main>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Primary">
+    <a href="#/overview" data-route="overview"><svg class="icon" aria-hidden="true"><use href="#icon-overview"></use></svg><span>Overview</span></a>
+    <a href="#/incidents" data-route="incidents"><svg class="icon" aria-hidden="true"><use href="#icon-report"></use></svg><span>Reports</span></a>
+    <a href="#/keys" data-route="keys"><svg class="icon" aria-hidden="true"><use href="#icon-key"></use></svg><span>Keys</span></a>
+    <a href="#/passdown" data-route="passdown"><svg class="icon" aria-hidden="true"><use href="#icon-passdown"></use></svg><span>Pass-down</span></a>
+    <button type="button" id="moreNavBtn" aria-expanded="false" aria-controls="moreSheet"><svg class="icon" aria-hidden="true"><use href="#icon-resource"></use></svg><span>More</span></button>
+  </nav>
+
+  <button class="sheet-backdrop" id="sheetBackdrop" hidden aria-label="Close menu"></button>
+  <div class="more-sheet" id="moreSheet" hidden role="dialog" aria-label="More sections">
+    <a href="#/bolos" data-route="bolos"><span>B.O.L.O.s</span><span class="form-code">BL</span></a>
+    <a href="#/supervisor" data-route="supervisor" data-supervisor-only hidden>Supervisor Review</a>
+    <a href="#/resources" data-route="resources">Resources</a>
+    <button type="button" id="moreSupervisorBtn">Supervisor access</button>
+    <button type="button" id="moreThemeBtn">Toggle appearance</button>
+    <button type="button" data-sign-out>Sign out</button>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

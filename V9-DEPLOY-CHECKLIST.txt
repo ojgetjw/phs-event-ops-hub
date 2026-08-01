@@ -1,0 +1,130 @@
+PHS SECURITY HUB — v9 PHASE 1 DEPLOY CHECKLIST
+
+Contains everything in v8 (Google sign-in gate) PLUS:
+  - Overview redesign (structure C — header removed, ticker owns the top)
+  - New shield crest
+  - Security email ticker (#23)
+  - Automated backups (#22)
+
+------------------------------------------------------------------
+1. BACK UP FIRST
+------------------------------------------------------------------
+[ ] Download the current GitHub repo as a ZIP.
+[ ] Make a copy of the Security Hub Google Sheet.
+
+------------------------------------------------------------------
+2. NETLIFY ENVIRONMENT VARIABLES
+------------------------------------------------------------------
+Already set (done July 31):
+[x] GOOGLE_CLIENT_ID
+[x] ALLOWED_EMAILS = security@pembrokehill.org,securitylead@pembrokehill.org
+[x] APPS_SCRIPT_URL, APPS_SCRIPT_TOKEN, SUPERVISOR_PIN
+
+No new variables are required for v9 phase 1.
+
+------------------------------------------------------------------
+3. GOOGLE APPS SCRIPT  (do this BEFORE the GitHub upload)
+------------------------------------------------------------------
+[ ] Open the Apps Script project bound to the Security Hub Sheet.
+[ ] Replace Code.gs with google-apps-script/Code.gs
+      (adds tickerFeed / tickerDismiss to the action router)
+[ ] ADD NEW FILE: Ticker.gs   (File > New > Script, name it "Ticker")
+[ ] ADD NEW FILE: Backup.gs   (File > New > Script, name it "Backup")
+[ ] Replace appsscript.json with the included file.
+      NOTE: scopes changed. Gmail and full Drive access are now needed
+      for the ticker and backups. You will be asked to re-authorize.
+[ ] Save.
+
+[ ] Run setup()        — existing setup, unchanged
+[ ] Run setupBackups() — installs the nightly 2 AM backup trigger
+[ ] Run backupNowAndVerify() — takes a backup immediately and verifies it
+      Expect: "VERIFIED — backup is readable and complete."
+
+[ ] MAILBOX ACCESS — the ticker reads the mailbox of the account this
+      script runs as. Either:
+        (a) move this Apps Script project to security@pembrokehill.org, or
+        (b) set a Gmail forward from security@ into the account that owns
+            this script.
+      Nothing else in v9 depends on this; the ticker simply stays empty
+      until it is done.
+
+[ ] In Gmail, create the label:  Security Hub
+      Anything with that label always shows in the ticker.
+      Keyword matching works without it.
+
+[ ] Run tickerTest() and check the log.
+      Expect a list of matched messages, or "Matched 0 item(s)" if the
+      mailbox has nothing security-related in the last 3 days.
+
+[ ] Deploy > Manage deployments > Edit > New version > Deploy
+[ ] Keep using the /exec URL.
+
+------------------------------------------------------------------
+4. GITHUB
+------------------------------------------------------------------
+[ ] Upload the CONTENTS of the GPTv9 folder to the repository root.
+[ ] Confirm public/, netlify/, google-apps-script/, docs/ are at root.
+[ ] Commit. Netlify redeploys automatically.
+
+------------------------------------------------------------------
+5. TEST — sign-in (from v8)
+------------------------------------------------------------------
+[ ] Site opens to the Google sign-in screen; no data behind it.
+[ ] An allowlisted account signs in and the hub loads.
+[ ] A non-allowlisted Google account is rejected.
+[ ] Sign out (side nav bottom / More sheet) returns to sign-in.
+
+------------------------------------------------------------------
+6. TEST — new layout
+------------------------------------------------------------------
+[ ] No dark header bar at the top of the page.
+[ ] Side nav shows the new shield, clock, date, and connection status.
+[ ] Supervisor, refresh, and appearance buttons sit at the nav bottom.
+[ ] Overview shows: ticker, then quick actions, then activity feed.
+[ ] Feed filter chips work (All / Reports / Activity / Pass-down /
+      B.O.L.O. / Keys).
+[ ] With nothing outstanding: B.O.L.O./keys/pass-down cards sit at the
+      BOTTOM, dimmed.
+[ ] With something outstanding: that card moves to a colored row at the
+      TOP and disappears from the bottom (no duplicates).
+[ ] Old hero image, "One clear view of the day", and the shift summary
+      strip are all gone.
+[ ] Mobile: bottom nav works; More sheet has supervisor access,
+      appearance, and sign out.
+
+------------------------------------------------------------------
+7. TEST — email ticker
+------------------------------------------------------------------
+[ ] With no matching mail: navy strip reading "No open security requests".
+[ ] Send yourself a test to security@ with a subject like
+      "Need gate unlocked at Hicks tonight 6:30pm"
+      Within ~2 minutes it should appear tagged GATE.
+[ ] Send one with "URGENT" in it — appears first, styled red.
+[ ] Text is easily readable against the background, in sunlight.
+[ ] Clicking the ticker opens that email in Gmail.
+[ ] The X dismisses it and labels the thread Security Hub/Handled.
+[ ] Hovering pauses the rotation.
+[ ] Dark mode: colors invert to deep fill with pale text, still readable.
+
+------------------------------------------------------------------
+8. TEST — backups
+------------------------------------------------------------------
+[ ] Drive contains "PHS Security Hub Backups" with Daily and Yearly.
+[ ] A dated backup file exists in Daily.
+[ ] verifyBackup() reports VERIFIED.
+[ ] The Sheet has a "Backup Log" tab with an OK row.
+[ ] restoreInstructions() prints the restore steps and backup link.
+
+------------------------------------------------------------------
+9. AFTER DEPLOY — remaining security item
+------------------------------------------------------------------
+[ ] Check the Google Drive uploads folder sharing. If attachments are
+      set to "anyone with the link", the sign-in gate does not protect
+      them. Restrict to approved accounts.
+
+------------------------------------------------------------------
+ROLLBACK
+------------------------------------------------------------------
+Revert the GitHub commit; Netlify redeploys the previous version.
+Apps Script: Deploy > Manage deployments > select an earlier version.
+The GPTv8 and GPTv7 folders remain untouched on the Desktop.

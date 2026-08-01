@@ -1,0 +1,63 @@
+PHS SECURITY HUB — GITHUB / NETLIFY CHECKLIST
+
+1. BACK UP
+[ ] Download the current GitHub repository as a ZIP.
+[ ] Make a backup copy of the current Google Sheet.
+
+2. GITHUB
+[ ] Unzip this package.
+[ ] Upload the CONTENTS of the package to the repository root.
+[ ] Confirm public/, netlify/, google-apps-script/, and docs/ are at the root.
+[ ] Commit the replacement files.
+
+3. GOOGLE APPS SCRIPT
+[ ] Replace Code.gs with google-apps-script/Code.gs.
+[ ] Replace appsscript.json with the included file.
+[ ] Save.
+[ ] Run setup() once. This installs the daily 2 PM summary trigger.
+[ ] Copy the API token from the execution log if it changed.
+[ ] Run configureDailySummaryRecipients("twood9083@gmail.com,lead-email@pembrokehill.org") with the real lead email.
+[ ] Run sendDailySummaryTest() and confirm the test email arrives.
+[ ] Deploy > Manage deployments > Edit > New version > Deploy.
+[ ] Continue using the /exec URL.
+
+4. NETLIFY ENVIRONMENT VARIABLES
+[ ] APPS_SCRIPT_URL is the Apps Script /exec URL.
+[ ] APPS_SCRIPT_TOKEN matches the token from setup().
+[ ] SUPERVISOR_PIN is set to a supervisor-only PIN.
+[ ] GOOGLE_CLIENT_ID is set (see docs/SIGN-IN-SETUP.md). REQUIRED.
+[ ] ALLOWED_EMAILS lists the authorized sign-in emails. REQUIRED.
+[ ] Optional: AUTH_SESSION_DAYS=7.
+[ ] Optional: AUTH_SESSION_SECRET is set to a long random value.
+[ ] Optional: SUPERVISOR_SESSION_HOURS=8.
+[ ] Optional: SUPERVISOR_SESSION_SECRET is set to a long random value.
+
+IMPORTANT: Set GOOGLE_CLIENT_ID and ALLOWED_EMAILS BEFORE uploading this
+build. The API fails closed and will serve no data until they exist.
+
+5. NETLIFY BUILD SETTINGS
+[ ] Build command is blank.
+[ ] Publish directory is public.
+[ ] Functions directory is netlify/functions.
+
+6. TEST
+[ ] Site opens to the Google sign-in screen; no data loads behind it.
+[ ] Allowlisted account signs in and the hub loads.
+[ ] Non-allowlisted Google account is rejected with "not authorized."
+[ ] Sign out returns to the sign-in screen.
+[ ] Overview image displays.
+[ ] Light/dark appearance toggle works.
+[ ] Daily Activity submits with actual date/time.
+[ ] Incident Report submits with People Involved selection.
+[ ] Supervisor remains hidden until the PIN is accepted.
+[ ] Report approval actions work.
+[ ] Keys/equipment checkout and return work.
+[ ] Pass-down saves and filters work.
+[ ] B.O.L.O. posting and resolution work.
+[ ] Daily summary email lists the previous 24 hours of actions.
+[ ] Gates & Fences displays inside Resources.
+[ ] Attachments save to the private Google Drive upload folder.
+
+PATCH NOTE: Run setup() after this upload so existing sheets get the Start Time and End Time columns.
+
+PATCH NOTE: The daily email summary uses Apps Script MailApp and a time-based trigger. The included appsscript.json adds the required mail and trigger scopes.

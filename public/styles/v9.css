@@ -1,0 +1,256 @@
+/* v9 — ticker, structure C nav, promoted counts, unified feed.
+   Loaded after components.css so it wins on shared selectors. */
+
+/* --- Structure C: header removed -------------------------------------
+   The old layout offset everything by a 70px header. Those offsets are
+   reclaimed here since the header no longer exists. */
+
+.app-header { display: none; }
+
+.app-layout { min-height: 100vh; }
+.side-nav { top: 0; height: 100vh; padding-top: 16px; }
+.app-main { min-width: 0; display: flex; flex-direction: column; }
+.page { padding-top: 20px; }
+
+@media (max-width: 760px) {
+  .app-layout { min-height: 100vh; }
+}
+
+/* --- Ticker ------------------------------------------------------------
+   Pale tint + dark same-family text. Measured 8.6:1–12.6:1 light,
+   ~6.5:1 dark. White-on-saturated was rejected at 3.9:1. */
+
+.ticker {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 16px; min-height: 56px;
+  border-bottom: 1px solid var(--line-300);
+  font-family: var(--font-body);
+}
+
+.ticker-tag {
+  flex-shrink: 0;
+  font-size: 11px; font-weight: 600; letter-spacing: .04em;
+  padding: 4px 9px; border-radius: 6px; white-space: nowrap;
+}
+
+.ticker-body {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 2px;
+  text-decoration: none; color: inherit;
+}
+.ticker-body:hover .ticker-title { text-decoration: underline; }
+
+.ticker-title { font-size: 15px; font-weight: 600; line-height: 1.25; }
+.ticker-detail { font-size: 13px; line-height: 1.3; opacity: .9; }
+.ticker-title, .ticker-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ticker-count { flex-shrink: 0; font-size: 12px; opacity: .85; white-space: nowrap; }
+
+.ticker-controls { flex-shrink: 0; display: flex; gap: 2px; }
+.ticker-controls button {
+  width: 30px; height: 30px; padding: 0;
+  background: transparent; border: 0; border-radius: 6px;
+  color: inherit; font-size: 15px; line-height: 1; cursor: pointer;
+}
+.ticker-controls button:hover { background: rgba(0, 0, 0, .09); }
+.ticker-controls button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+
+/* Tones — light mode */
+.ticker-urgent   { background: #FCEBEB; color: #501313; border-bottom-color: #F0999B; }
+.ticker-urgent   .ticker-tag { background: #F7C1C1; color: #501313; }
+.ticker-urgent   .ticker-detail, .ticker-urgent .ticker-count { color: #791F1F; }
+
+.ticker-issue    { background: #FAEEDA; color: #412402; border-bottom-color: #EF9F27; }
+.ticker-issue    .ticker-tag { background: #FAC775; color: #412402; }
+.ticker-issue    .ticker-detail, .ticker-issue .ticker-count { color: #633806; }
+
+.ticker-gate     { background: #E6F1FB; color: #042C53; border-bottom-color: #85B7EB; }
+.ticker-gate     .ticker-tag { background: #B5D4F4; color: #042C53; }
+.ticker-gate     .ticker-detail, .ticker-gate .ticker-count { color: #0C447C; }
+
+.ticker-visitor  { background: #E1F5EE; color: #04342C; border-bottom-color: #5DCAA5; }
+.ticker-visitor  .ticker-tag { background: #9FE1CB; color: #04342C; }
+.ticker-visitor  .ticker-detail, .ticker-visitor .ticker-count { color: #0F6E56; }
+
+.ticker-coverage { background: #EEEDFE; color: #26215C; border-bottom-color: #AFA9EC; }
+.ticker-coverage .ticker-tag { background: #CECBF6; color: #26215C; }
+.ticker-coverage .ticker-detail, .ticker-coverage .ticker-count { color: #3C3489; }
+
+.ticker-event    { background: #FBEAF0; color: #4B1528; border-bottom-color: #ED93B1; }
+.ticker-event    .ticker-tag { background: #F4C0D1; color: #4B1528; }
+.ticker-event    .ticker-detail, .ticker-event .ticker-count { color: #72243E; }
+
+.ticker-request  { background: var(--surface-2); color: var(--ink-900); }
+.ticker-request  .ticker-tag { background: var(--surface-3); color: var(--ink-700); }
+.ticker-request  .ticker-detail, .ticker-request .ticker-count { color: var(--ink-700); }
+
+.ticker-quiet {
+  background: var(--brand-navy-950); color: #9fb0be;
+  justify-content: flex-start; min-height: 40px; padding: 9px 16px;
+}
+.ticker-quiet-text { font-size: 13px; }
+
+/* Tones — dark mode: deep fill, pale text */
+html[data-theme="dark"] .ticker-urgent   { background:#791F1F; color:#FCEBEB; border-bottom-color:#A32D2D; }
+html[data-theme="dark"] .ticker-urgent   .ticker-tag { background:#F09595; color:#501313; }
+html[data-theme="dark"] .ticker-urgent   .ticker-detail, html[data-theme="dark"] .ticker-urgent .ticker-count { color:#F7C1C1; }
+
+html[data-theme="dark"] .ticker-issue    { background:#633806; color:#FAEEDA; border-bottom-color:#854F0B; }
+html[data-theme="dark"] .ticker-issue    .ticker-tag { background:#EF9F27; color:#412402; }
+html[data-theme="dark"] .ticker-issue    .ticker-detail, html[data-theme="dark"] .ticker-issue .ticker-count { color:#FAC775; }
+
+html[data-theme="dark"] .ticker-gate     { background:#0C447C; color:#E6F1FB; border-bottom-color:#185FA5; }
+html[data-theme="dark"] .ticker-gate     .ticker-tag { background:#85B7EB; color:#042C53; }
+html[data-theme="dark"] .ticker-gate     .ticker-detail, html[data-theme="dark"] .ticker-gate .ticker-count { color:#B5D4F4; }
+
+html[data-theme="dark"] .ticker-visitor  { background:#085041; color:#E1F5EE; border-bottom-color:#0F6E56; }
+html[data-theme="dark"] .ticker-visitor  .ticker-tag { background:#5DCAA5; color:#04342C; }
+html[data-theme="dark"] .ticker-visitor  .ticker-detail, html[data-theme="dark"] .ticker-visitor .ticker-count { color:#9FE1CB; }
+
+html[data-theme="dark"] .ticker-coverage { background:#3C3489; color:#EEEDFE; border-bottom-color:#534AB7; }
+html[data-theme="dark"] .ticker-coverage .ticker-tag { background:#AFA9EC; color:#26215C; }
+html[data-theme="dark"] .ticker-coverage .ticker-detail, html[data-theme="dark"] .ticker-coverage .ticker-count { color:#CECBF6; }
+
+html[data-theme="dark"] .ticker-event    { background:#72243E; color:#FBEAF0; border-bottom-color:#993556; }
+html[data-theme="dark"] .ticker-event    .ticker-tag { background:#ED93B1; color:#4B1528; }
+html[data-theme="dark"] .ticker-event    .ticker-detail, html[data-theme="dark"] .ticker-event .ticker-count { color:#F4C0D1; }
+
+html[data-theme="dark"] .ticker-controls button:hover { background: rgba(255,255,255,.14); }
+
+/* --- Side nav carries identity, clock and controls --------------------- */
+
+.nav-identity {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.13);
+  color: #fff; text-decoration: none;
+}
+.nav-identity .brand-mark { width: 26px; height: 31px; color: #fff; }
+.nav-identity strong { display: block; font-size: 13px; font-weight: 600; font-family: var(--font-display); }
+.nav-identity small { display: block; font-size: 10px; color: #7d90a1; }
+
+.nav-clock { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.13); }
+.nav-clock strong { display: block; font-size: 20px; font-weight: 600; color: #fff; font-family: var(--font-display); }
+.nav-clock small { display: block; font-size: 10px; color: #7d90a1; margin-top: 2px; }
+.nav-clock .status-chip { margin-top: 6px; font-size: 10px; padding: 2px 7px; }
+
+.nav-controls {
+  margin-top: auto; padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.13);
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.nav-controls .icon-btn { width: 32px; height: 32px; color: #9fb0be; border-color: rgba(255,255,255,.18); }
+.nav-controls .icon-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+/* --- Promoted counts --------------------------------------------------- */
+
+.promoted-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.promoted-card {
+  flex: 1; display: flex; align-items: baseline; gap: 7px;
+  padding: 10px 13px; border-radius: var(--radius-sm);
+  text-decoration: none; font-family: var(--font-body);
+}
+.promoted-card strong { font-size: 20px; font-weight: 700; font-family: var(--font-display); }
+.promoted-card span { font-size: 12px; }
+
+.promoted-danger  { background:#FCEBEB; color:#501313; }
+.promoted-danger  span { color:#791F1F; }
+.promoted-warning { background:#FAEEDA; color:#412402; }
+.promoted-warning span { color:#633806; }
+
+html[data-theme="dark"] .promoted-danger  { background:#791F1F; color:#FCEBEB; }
+html[data-theme="dark"] .promoted-danger  span { color:#F7C1C1; }
+html[data-theme="dark"] .promoted-warning { background:#633806; color:#FAEEDA; }
+html[data-theme="dark"] .promoted-warning span { color:#FAC775; }
+
+/* --- Quick actions ----------------------------------------------------- */
+
+.quick-actions-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.quick-action {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 11px 8px; border: 1px solid var(--line-300); border-radius: var(--radius-sm);
+  background: var(--surface-1); color: var(--ink-900);
+  font-size: 13px; font-weight: 600; text-decoration: none;
+}
+.quick-action:hover { border-color: var(--brand-red-700); color: var(--brand-red-700); }
+.quick-action .icon { width: 17px; height: 17px; }
+
+/* --- Unified feed ------------------------------------------------------ */
+
+.feed-section { margin-bottom: 16px; }
+.feed-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 11px; }
+.chip {
+  padding: 5px 12px; border-radius: 999px;
+  border: 1px solid var(--line-300); background: var(--surface-1);
+  color: var(--ink-700); font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.chip:hover { border-color: var(--line-400); }
+.chip.is-active { background: var(--brand-navy-950); border-color: var(--brand-navy-950); color: #fff; }
+html[data-theme="dark"] .chip.is-active { background:#fff; border-color:#fff; color:var(--brand-navy-950); }
+
+.feed { display: flex; flex-direction: column; gap: 6px; }
+.feed-item {
+  background: var(--surface-1);
+  border-left: 3px solid var(--line-400);
+  padding: 10px 13px;
+}
+.feed-item.is-alert { border-left-color: var(--danger-700); }
+.feed-report   { border-left-color: var(--danger-700); }
+.feed-bolo     { border-left-color: var(--brand-red-700); }
+.feed-passdown { border-left-color: var(--info-700); }
+.feed-key      { border-left-color: var(--warning-700); }
+.feed-activity { border-left-color: var(--line-400); }
+
+.feed-item-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.feed-item-head strong { font-size: 14px; font-weight: 600; }
+.feed-item p { margin: 4px 0 0; font-size: 13px; color: var(--ink-700); line-height: 1.45; }
+.feed-item-meta { display: flex; gap: 12px; margin-top: 5px; font-size: 12px; color: var(--ink-500); }
+
+.feed-updated { font-size: 12px; text-align: center; margin: 12px 0 0; }
+
+/* --- Resting trackers -------------------------------------------------- */
+
+.resting-row { display: flex; gap: 8px; }
+.resting-card {
+  flex: 1; padding: 11px 13px;
+  background: var(--surface-1); border: 1px solid var(--line-300);
+  border-radius: var(--radius-sm); text-decoration: none; color: var(--ink-900);
+}
+.resting-card:hover { border-color: var(--line-400); }
+.resting-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.resting-head span { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink-700); }
+.resting-head .icon { width: 15px; height: 15px; }
+.resting-head strong { font-size: 17px; font-weight: 700; color: var(--ink-500); font-family: var(--font-display); }
+.resting-card p { margin: 5px 0 0; font-size: 12px; color: var(--ink-500); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* --- Mobile ------------------------------------------------------------ */
+
+@media (max-width: 1100px) {
+  /* Collapsed rail: identity mark only, clock and labels hidden. */
+  .nav-identity span, .nav-clock small, .nav-clock .status-chip, .nav-signout { display: none; }
+  .nav-identity { justify-content: center; padding-bottom: 10px; }
+  .nav-clock { text-align: center; padding: 8px 0; }
+  .nav-clock strong { font-size: 13px; }
+  .nav-controls { justify-content: center; }
+}
+
+@media (max-width: 860px) {
+  .ticker { padding: 10px 13px; min-height: 50px; gap: 9px; }
+  .ticker-title { font-size: 14px; }
+  .ticker-detail { font-size: 12px; }
+  .ticker-count { display: none; }
+  .promoted-row, .quick-actions-row, .resting-row { flex-wrap: wrap; }
+  .promoted-card, .resting-card { min-width: calc(50% - 4px); }
+  .quick-action { min-width: calc(50% - 4px); }
+}
+
+@media (max-width: 760px) {
+  /* Side nav is hidden on mobile; controls live in the More sheet. */
+  .more-sheet button {
+    min-height: 50px; display: flex; align-items: center;
+    width: 100%; padding: 10px 14px; border: 0; border-radius: 12px;
+    background: transparent; color: var(--ink-900);
+    font: inherit; font-weight: 700; text-align: left; cursor: pointer;
+  }
+  .more-sheet button:hover { background: var(--surface-2); }
+}

@@ -1,0 +1,7 @@
+{
+  "sample": true,
+  "gates": [
+    { "name": "Main Gate", "campus": "Ward Parkway / Upper Campus", "opens": "06:30", "closes": "18:00", "notes": "Sample entry — replace with real schedule" },
+    { "name": "South Lot Gate", "campus": "Wornall / Lower Campus", "opens": "07:00", "closes": "16:30", "notes": "Sample entry — replace with real schedule" }
+  ]
+}

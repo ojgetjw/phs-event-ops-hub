@@ -1,0 +1,22 @@
+:root {
+  --brand-navy-950:#071521;--brand-navy-900:#102338;--brand-navy-800:#142b45;--brand-navy-700:#1d3650;
+  --brand-red-800:#86182b;--brand-red-700:#a61e35;--brand-red-600:#bf2842;--brand-gold-600:#c8942e;
+  --ink-900:#17212e;--ink-700:#44556b;--ink-500:#6b7a8c;--ink-300:#9aa7b7;
+  --surface-0:#f3f6fa;--surface-1:#fff;--surface-2:#eef3f8;--surface-3:#e5ecf4;
+  --line-300:#d6dee8;--line-400:#c7d2df;
+  --success-700:#0f7c58;--warning-700:#a85f00;--danger-700:#b52f32;--info-700:#2456b8;--focus-ring:#0f62fe;
+  --font-display:"Plus Jakarta Sans",Inter,"Segoe UI",Arial,sans-serif;
+  --font-body:Inter,system-ui,"Segoe UI",Roboto,Arial,sans-serif;
+  --font-mono:"IBM Plex Mono",SFMono-Regular,Consolas,monospace;
+  --text-xs:12px;--text-sm:14px;--text-md:16px;--text-lg:18px;--text-xl:24px;--text-2xl:34px;--text-3xl:44px;
+  --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;--space-10:40px;
+  --radius-sm:10px;--radius-md:14px;--radius-lg:20px;--radius-xl:28px;
+  --shadow-sm:0 5px 16px rgba(18,38,58,.08);--shadow-md:0 18px 42px rgba(18,38,58,.14);--shadow-hero:0 24px 70px rgba(7,21,33,.28);
+}
+
+html[data-theme="dark"] {
+  --ink-900:#edf4fb;--ink-700:#c1cfdd;--ink-500:#97a9ba;--ink-300:#718598;
+  --surface-0:#08131d;--surface-1:#10202e;--surface-2:#142736;--surface-3:#1a3041;
+  --line-300:#294154;--line-400:#365269;
+  --shadow-sm:0 8px 20px rgba(0,0,0,.22);--shadow-md:0 20px 46px rgba(0,0,0,.30);
+}
